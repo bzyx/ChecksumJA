@@ -1,0 +1,7 @@
+LIBRARY 
+"ChecksumJaDll" 
+EXPORTS 
+MyProc1
+DodawanieAsm
+CRC32_MASM
+ADLER32_MASM
