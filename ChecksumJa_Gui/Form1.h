@@ -8,7 +8,8 @@ namespace ChecksumJa_Gui {
 	DWORD static algValue;
 
 
-	extern "C" DWORD _stdcall CRC32_MASM(DWORD, DWORD, DWORD); 
+	extern "C" DWORD _stdcall CRC32_MASM_TAB(DWORD, DWORD, DWORD); 
+	extern "C" DWORD _stdcall CRC32_MASM_BITBYBIT(DWORD, DWORD, DWORD); 
 	extern "C" DWORD _stdcall ADLER32_MASM(DWORD, DWORD, DWORD); 
 	extern "C" int _stdcall MyProc1 (DWORD, CHAR); 
 	extern "C" int _stdcall DodawanieAsm (DWORD , DWORD );
@@ -140,8 +141,8 @@ namespace ChecksumJa_Gui {
 				 // cAlgorytm
 				 // 
 				 this->cAlgorytm->FormattingEnabled = true;
-				 this->cAlgorytm->Items->AddRange(gcnew cli::array< System::Object^  >(4) {L"CRC 32 - MASM", L"CRC 32 - C", L"Adler32 - MASM", 
-					 L"Alder 32 - C"});
+				 this->cAlgorytm->Items->AddRange(gcnew cli::array< System::Object^  >(5) {L"CRC 32 - MASM TABLE", L"CRC 32 - MASM BIT-By-BIT", 
+					 L"CRC 32 - C", L"Adler32 - MASM", L"Alder 32 - C"});
 				 this->cAlgorytm->Location = System::Drawing::Point(94, 41);
 				 this->cAlgorytm->Name = L"cAlgorytm";
 				 this->cAlgorytm->Size = System::Drawing::Size(352, 21);
@@ -402,9 +403,13 @@ namespace ChecksumJa_Gui {
 				 }
 				 //String^ str = gcnew System::String();
 				 //str = Convert::ToString((int)algValue);
-				 this->tWynik->Text= Convert::ToString((unsigned int)algValue);
+				 int z = algValue;
+				 //this->tWynik->Text= Convert::ToString((unsigned int)algValue);
+				 //String str = Convert::ToString(z,16);
+				 this->tWynik->Text= Convert::ToString(z,16)->ToUpper();
 				 this->logBox->Items->Add("Czas ³¹czny: "+allTime);
 				 this->groupBox1->Enabled=TRUE;
+				 algValue=0;
 				 fileReader->resetFile();
 			 }
 
@@ -437,7 +442,8 @@ namespace ChecksumJa_Gui {
 				//this->cAlgorytm->SelectedIndex == -1 -> Nothing chossed
 				 this->logBox->Items->Add("Numer opcji: "+this->cAlgorytm->SelectedIndex);
 				 switch(this->cAlgorytm->SelectedIndex){
-					case 0:	alg_fun=CRC32_MASM; algValue=0; break;
+					case 0:	alg_fun=CRC32_MASM_TAB; algValue=0; break;
+					case 1:	alg_fun=CRC32_MASM_BITBYBIT; algValue=0; break;
 					case 2: alg_fun=ADLER32_MASM; algValue=0; break;
 					default: alg_fun=NULL; algValue=0;
 				 }
