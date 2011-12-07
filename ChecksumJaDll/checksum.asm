@@ -3,77 +3,69 @@
  
 .code 
  
-MyProc1 proc x: DWORD, y: BYTE 
- 
-	xor eax, eax
-	xor cl, cl
-	mov eax, x 
-	mov cl, y 
-	shl eax, cl
-    ret
-       
-MyProc1 endp 
- 
-DodawanieAsm proc x: DWORD, y: DWORD 
-	xor eax, eax
-	xor ecx, ecx
-	mov eax, x
-	mov ecx, y
-	add eax, ecx
-	ret
-       
-DodawanieAsm endp  
-
 CRC32_MASM_BITBYBIT proc x: DWORD, y: DWORD, z: DWORD ;crc32 *buf len
 ;Obliczamy CRC dla komputera Big endian wiec wielomian jest odwrócony.
+		push ecx
+		push edx
+		push ebx
 		mov eax, x				;Aktualne crc do eax
 		mov ecx, z				;Iloœæ (licznik) danych do ecx
 		mov edx, y				;Do edx pierwszy element tablicy zdanymi
 		jecxz   wyj				;ECX = 0 -> Brak danych do przetworzenia wychodzimy	
 		not     eax				;Negujemy sumê wejsciowa. Przy pierwszym uruchomieniu
-								;potrzebujemy wartosci maksymalnej, a ³atwiej uruchomic funkcje z wart 0.
+								;potrzebujemy wartosci maksymalnej, a ³atwiej uruchmic funkcje z wart 0.
+		xor		ebx, ebx		;bêdziemy korzystaæ z rejesru ebx jako rej. pomocniczy
 crc_l:	xor     al, [edx]		;wprowadzamy nowy (kolejny) bajt do obliczenia i "³¹czymy go z reszt¹ sumy"
-		inc     edx				;zwiekszamy wsaŸnik danych o jeden element
+		inc     edx				;zwiekszamy wskaŸnik danych o jeden element
 		mov     bl, 8			;bl jest pomocniczym licznikiem 8 bitów w jednym bajcie
 getbit:	shr     eax, 1			;przesun w prawo .IF (c = 1) [wychodzi bit o wart 1]
 		jnc     bit0			;.ELSE [c=0] -> bit0 czyli pominiemy operacjê na nim
 		xor     eax,0EDB88320h	;bit byl 1 .THEN [c=1] crc=crc^wielomian
 bit0:	dec     bl				;zmniejsz licznik bitow-> zajmujemy siê kolejnym bitem
-		jnz     getbit			;.IF (z!=1) kolejny bit
+		jnz     getbit			;.IF (z!=1) kolejny bit (pêtla pomocnicza "bitowa")
 		loop    crc_l			;g³ówna petla wykonuj¹ca siê ECX razy
 		not     eax				;odnegujemy CRC [wynik jako wyjœcie z funkcji w eax]
-wyj:	ret						;wyjscie z procedury
+wyj:	pop		ebx
+		pop		edx
+		pop		ecx
+		ret						;wyjscie z procedury
 				
 CRC32_MASM_BITBYBIT endp
 
 CRC32_MASM_TAB proc x: DWORD, y: DWORD, z: DWORD ;crc32 *buf len
-	push	esi
-	push	ecx
 	push	edx
+	push	ecx
+	push	ebx
+	xor ebx, ebx
 
-	mov	esi, y
-	xor	edx, edx
-	or	eax, -1
-	mov	ecx, z
-	;mov eax, x
+	mov eax, x					;aktualne crc do ebx
+	mov edx, y					;wskaŸnik na dane do edx
+	mov ecx, z					;licznik danych do ecx
+	jecxz   wyj					;CX = 0 -> Brak danych do przetworzenia wychodzimy	
+	not eax						;negujemy aktualn¹ wartoœæ crc
 
-CRC32_loop:
-	mov	dl, byte ptr [esi]
-	xor	dl, al
-	shr	eax, 8
-	xor	eax, dword ptr [crc32_table + 4*edx]
-	inc	esi
-	dec	ecx
-	jnz	CRC32_loop
+crc_loop:
+    mov		bl, [edx]			; nowy bajt z bufora do bl
+    inc     edx                 ; przesuwamy wskaŸnik na nastêpn¹ wartoœæ
+    xor		bl, al	            ; (crc ^ wartosc) & 0xFF
+								; Wykorzystanie tablicy wyszukiwania
+								; Przesuwamy aktualne crc o 8bitów w prawo
+								; Uzyskan¹ wartoœæ xorujemy 
+								; z stablicowan¹ wartoœæi¹ z reszt dzielenia dla wartoœci 1 bajtowych
+    shr		eax, 8	            ; crc = (crc >> 8) (
+    xor		eax, dword ptr [crc_tab+ebx*4]	;  crc ^ crc_tab[(crc ^ wartosc) & 0xFF]
+	loop crc_loop				; wykonaj ecx-razy
+	
+    not     eax                  ;odneguj crc
 
-	not	eax
-
-	pop	edx
+wyj:pop	ebx
 	pop	ecx
-	pop	esi
+	pop	edx
+	
 	ret
-
-crc32_table	dd 000000000h, 077073096h, 0EE0E612Ch, 0990951BAh, 0076DC419h, 0706AF48Fh, 0E963A535h, 09E6495A3h, 00EDB8832h, 079DCB8A4h
+; W tablicy znajduj¹ siê kolejne sumy crc32 dla wartoœci z zakresu 1 bajta.
+; zosta³y one u³o¿one w kolejnoœci rosn¹cej od 0 do 255 dziesiêtnie
+crc_tab dd 000000000h, 077073096h, 0EE0E612Ch, 0990951BAh, 0076DC419h, 0706AF48Fh, 0E963A535h, 09E6495A3h, 00EDB8832h, 079DCB8A4h
 		dd 0E0D5E91Eh, 097D2D988h, 009B64C2Bh, 07EB17CBDh, 0E7B82D07h, 090BF1D91h, 01DB71064h, 06AB020F2h, 0F3B97148h, 084BE41DEh
 		dd 01ADAD47Dh, 06DDDE4EBh, 0F4D4B551h, 083D385C7h, 0136C9856h, 0646BA8C0h, 0FD62F97Ah, 08A65C9ECh, 014015C4Fh, 063066CD9h
 		dd 0FA0F3D63h, 08D080DF5h, 03B6E20C8h, 04C69105Eh, 0D56041E4h, 0A2677172h, 03C03E4D1h, 04B04D447h, 0D20D85FDh, 0A50AB56Bh
@@ -103,10 +95,55 @@ crc32_table	dd 000000000h, 077073096h, 0EE0E612Ch, 0990951BAh, 0076DC419h, 0706A
 CRC32_MASM_TAB endp
 
 ADLER32_MASM proc x: DWORD, y: DWORD, z: DWORD
+	push	edx
+	push	ecx
+	push	ebx
+	push	esi
+	xor ebx, ebx
 	xor eax, eax
-	mov eax, x
-	add eax, 1
-	ret 
+	
+	mov eax, y
+	mov esi, eax		;wskaŸnik na bufor w esi
+	mov ecx, z			;licznik w ecx
+	mov eax, x			;aktualna wartoœæ w eax
+	
+	cmp eax, 0
+	jz initAdler
+	
+	mov eax, z
+	and eax, 0ffffh
+	mov edx, z
+	shr edx, 16
+	and edx, 0ffffh
+	jmp licz
+	
+initAdler:	
+	mov eax, 1
+	mov edx, 0
+	
+licz:
+	
+	add eax, dword ptr [esi]
+	inc esi
+	xor eax, 65521
+	
+	add edx, eax
+	xor edx, 65521
+	loop licz
+	
+	shl ebx, 16
+	push eax
+	mov eax, ebx
+	pop ebx
+	or eax, ebx
+	
+	
+wyj:pop esi
+	pop	ebx
+	pop	ecx
+	pop	edx
+	
+	ret
 ADLER32_MASM endp
 
 end
