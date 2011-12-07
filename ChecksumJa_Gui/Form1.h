@@ -1,18 +1,21 @@
 #pragma once
 #include <windows.h>
 #include <time.h>
+#include <intrin.h>
 #include "FileReader.h"
 
 namespace ChecksumJa_Gui {
 	DWORD ( _stdcall *alg_fun)(DWORD aktWart, DWORD bufWsk, DWORD bufLen);
 	DWORD static algValue;
 
+	unsigned __int64 rdtsc(void)
+	{
+		 return __rdtsc();
+	}
 
 	extern "C" DWORD _stdcall CRC32_MASM_TAB(DWORD, DWORD, DWORD); 
 	extern "C" DWORD _stdcall CRC32_MASM_BITBYBIT(DWORD, DWORD, DWORD); 
 	extern "C" DWORD _stdcall ADLER32_MASM(DWORD, DWORD, DWORD); 
-	extern "C" int _stdcall MyProc1 (DWORD, CHAR); 
-	extern "C" int _stdcall DodawanieAsm (DWORD , DWORD );
 
 	using namespace System;
 	using namespace System::ComponentModel;
@@ -384,7 +387,7 @@ namespace ChecksumJa_Gui {
 						 (fileReader->getCurrentBufferSize())/(1024*1024) + " MB");
 					 this->logBox->Items->Add("Iloœæ czêœci: "+fileReader->getHowManyParts());
 				 }
-
+				 __int64 cycleCounter = rdtsc();
 				 int allTime = 0;
 				 int startTime, endTime, totalTime;
 				 for (int i=0; i<fileReader->getHowManyParts(); i++){
@@ -399,6 +402,7 @@ namespace ChecksumJa_Gui {
 					 totalTime = endTime - startTime;
 					 this->logBox->Items->Add("Przeczytano nr. , iloœæ: "+i+" , "+wasRead);
 					 this->logBox->Items->Add("Czas czytania: "+totalTime);
+					 this->logBox->Items->Add("Iloœc cykli: "+(rdtsc()-cycleCounter) );
 					 allTime += totalTime;
 				 }
 				 //String^ str = gcnew System::String();
@@ -444,7 +448,7 @@ namespace ChecksumJa_Gui {
 				 switch(this->cAlgorytm->SelectedIndex){
 					case 0:	alg_fun=CRC32_MASM_TAB; algValue=0; break;
 					case 1:	alg_fun=CRC32_MASM_BITBYBIT; algValue=0; break;
-					case 2: alg_fun=ADLER32_MASM; algValue=0; break;
+					case 3: alg_fun=ADLER32_MASM; algValue=0; break;
 					default: alg_fun=NULL; algValue=0;
 				 }
 
