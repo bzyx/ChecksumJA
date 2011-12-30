@@ -95,6 +95,9 @@ crc_tab dd 000000000h, 077073096h, 0EE0E612Ch, 0990951BAh, 0076DC419h, 0706AF48F
 CRC32_MASM_TAB endp
 
 ADLER32_MASM proc x: DWORD, y: DWORD, z: DWORD
+LOCAL a:DWORD
+LOCAL b:DWORD
+
 	push	edx
 	push	ecx
 	push	ebx
@@ -104,55 +107,61 @@ ADLER32_MASM proc x: DWORD, y: DWORD, z: DWORD
 ;eax, ebx, ecx, edx	
 ;esi, edi, ebp
 
-	mov edx, y
-	;mov esi, eax		;wskaŸnik na bufor w esi
+	mov edx, y			;pierwszy element w edx
 	mov ecx, z			;licznik w ecx
 	mov eax, x			;aktualna wartoœæ w eax
+	
+
+	mov eax, x			;aktualna wartoœæ w eax
 	and eax, 65535		;adler32&0xffff -> s1
+	mov DWORD PTR a, eax
 	
-	mov ebx, x
-	shr ebx, 16
-	and ebx, 65535		;(adler >> 16) & 0xffff -> s2
+	mov eax, x
+	shr eax, 16
+	and eax, 65535		;(adler >> 16) & 0xffff -> s2
+	mov DWORD PTR b, eax
 	
-countAddler32:
-	add eax, [edx]
+	xor eax, eax
+
+	;mov DWORD PTR a, 1
+	;mov DWORD PTR b, 0
+	
+	count_adler:
+	mov al, [edx]
+	movzx eax, al
+	add eax, DWORD PTR a
 	push edx
 	xor edx, edx
 	push ecx
-	mov	ecx, 65521				; 0000fff1H
-	div	ecx
+	mov ecx, 65521
+	div ecx
 	pop ecx
 	mov eax, edx
 	pop edx
+	mov DWORD PTR a, eax
 	
-	add ebx, eax
+	add eax, DWORD PTR b
 	push edx
 	xor edx, edx
 	push ecx
-	mov	ecx, 65521				; 0000fff1H
-	div	ecx
+	mov ecx, 65521
+	div ecx
 	pop ecx
 	mov eax, edx
 	pop edx
-	loop countAddler32
+	mov DWORD PTR b, eax
 	
-	; 18   :         return (s2 << 16) + s1;
 	
-	push eax
-	mov eax, ebx
+	inc edx
+	loop count_adler
+	
+	mov eax, DWORD PTR b
 	shl eax, 16
-	xor ebx, ebx
+	or eax, DWORD PTR a
+	
 	pop ebx
-	add eax, ebx
-	
-	;mov	eax, DWORD PTR _s2$[ebp]
-	;shl	eax, 16					; 00000010H
-	;add	eax, DWORD PTR _s1$[ebp]
-		
-wyj:pop	ebx
-	pop	ecx
-	pop	edx
-	
+	pop ecx
+	pop edx
 	ret
 ADLER32_MASM endp
 

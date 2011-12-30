@@ -371,6 +371,7 @@ namespace ChecksumJa_Gui {
 				 //mo¿emy odczytaæ jego wielkoœæ, iloœæ zaalokowanej pamiêci
 				 //odczytaæ ten plik
 
+
 				 this->logBox->Items->Add("Oblicz button");
 				 fileReader->setMaxBufferSize(BufferSizeFromRadioButton());
 				 if (fileReader->initBuffer() == FALSE){
@@ -414,6 +415,9 @@ namespace ChecksumJa_Gui {
 				 this->logBox->Items->Add("Czas ³¹czny: "+allTime);
 				 this->groupBox1->Enabled=TRUE;
 				 algValue=0;
+				 if (alg_fun == ADLER32_MASM){
+				 algValue=1;
+				 }
 				 fileReader->resetFile();
 			 }
 
