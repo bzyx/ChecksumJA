@@ -1,4 +1,4 @@
-.486 
+.686P 
 .model flat, stdcall 
  
 .code 
@@ -98,48 +98,58 @@ ADLER32_MASM proc x: DWORD, y: DWORD, z: DWORD
 	push	edx
 	push	ecx
 	push	ebx
-	push	esi
 	xor ebx, ebx
 	xor eax, eax
-	
-	mov eax, y
-	mov esi, eax		;wskaŸnik na bufor w esi
+
+;eax, ebx, ecx, edx	
+;esi, edi, ebp
+
+	mov edx, y
+	;mov esi, eax		;wskaŸnik na bufor w esi
 	mov ecx, z			;licznik w ecx
 	mov eax, x			;aktualna wartoœæ w eax
+	and eax, 65535		;adler32&0xffff -> s1
 	
-	cmp eax, 0
-	jz initAdler
+	mov ebx, x
+	shr ebx, 16
+	and ebx, 65535		;(adler >> 16) & 0xffff -> s2
 	
-	mov eax, z
-	and eax, 0ffffh
-	mov edx, z
-	shr edx, 16
-	and edx, 0ffffh
-	jmp licz
+countAddler32:
+	add eax, [edx]
+	push edx
+	xor edx, edx
+	push ecx
+	mov	ecx, 65521				; 0000fff1H
+	div	ecx
+	pop ecx
+	mov eax, edx
+	pop edx
 	
-initAdler:	
-	mov eax, 1
-	mov edx, 0
+	add ebx, eax
+	push edx
+	xor edx, edx
+	push ecx
+	mov	ecx, 65521				; 0000fff1H
+	div	ecx
+	pop ecx
+	mov eax, edx
+	pop edx
+	loop countAddler32
 	
-licz:
+	; 18   :         return (s2 << 16) + s1;
 	
-	add eax, dword ptr [esi]
-	inc esi
-	xor eax, 65521
-	
-	add edx, eax
-	xor edx, 65521
-	loop licz
-	
-	shl ebx, 16
 	push eax
 	mov eax, ebx
+	shl eax, 16
+	xor ebx, ebx
 	pop ebx
-	or eax, ebx
+	add eax, ebx
 	
-	
-wyj:pop esi
-	pop	ebx
+	;mov	eax, DWORD PTR _s2$[ebp]
+	;shl	eax, 16					; 00000010H
+	;add	eax, DWORD PTR _s1$[ebp]
+		
+wyj:pop	ebx
 	pop	ecx
 	pop	edx
 	

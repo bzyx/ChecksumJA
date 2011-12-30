@@ -448,8 +448,8 @@ namespace ChecksumJa_Gui {
 				 switch(this->cAlgorytm->SelectedIndex){
 					case 0:	alg_fun=CRC32_MASM_TAB; algValue=0; break;
 					case 1:	alg_fun=CRC32_MASM_BITBYBIT; algValue=0; break;
-					case 3: alg_fun=ADLER32_MASM; algValue=0; break;
-					default: alg_fun=NULL; algValue=0;
+					case 3: alg_fun=ADLER32_MASM; algValue=1; break;
+					default: alg_fun=NULL; algValue=1;
 				 }
 
 			 }
