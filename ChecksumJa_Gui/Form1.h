@@ -16,6 +16,7 @@ namespace ChecksumJa_Gui {
 	extern "C" DWORD _stdcall CRC32_MASM_TAB(DWORD, DWORD, DWORD); 
 	extern "C" DWORD _stdcall CRC32_MASM_BITBYBIT(DWORD, DWORD, DWORD); 
 	extern "C" DWORD _stdcall ADLER32_MASM(DWORD, DWORD, DWORD); 
+	extern "C" DWORD _stdcall ADLER32_VECT(DWORD, DWORD, DWORD); 
 
 	using namespace System;
 	using namespace System::ComponentModel;
@@ -145,7 +146,7 @@ namespace ChecksumJa_Gui {
 				 // 
 				 this->cAlgorytm->FormattingEnabled = true;
 				 this->cAlgorytm->Items->AddRange(gcnew cli::array< System::Object^  >(5) {L"CRC 32 - MASM TABLE", L"CRC 32 - MASM BIT-By-BIT", 
-					 L"CRC 32 - C", L"Adler32 - MASM", L"Alder 32 - C"});
+					 L"CRC 32 - C", L"Adler32 - MASM", L"Alder 32 - VECT"});
 				 this->cAlgorytm->Location = System::Drawing::Point(94, 41);
 				 this->cAlgorytm->Name = L"cAlgorytm";
 				 this->cAlgorytm->Size = System::Drawing::Size(352, 21);
@@ -415,7 +416,7 @@ namespace ChecksumJa_Gui {
 				 this->logBox->Items->Add("Czas ³¹czny: "+allTime);
 				 this->groupBox1->Enabled=TRUE;
 				 algValue=0;
-				 if (alg_fun == ADLER32_MASM){
+				 if (alg_fun == ADLER32_MASM || alg_fun == ADLER32_VECT){
 				 algValue=1;
 				 }
 				 fileReader->resetFile();
@@ -453,6 +454,7 @@ namespace ChecksumJa_Gui {
 					case 0:	alg_fun=CRC32_MASM_TAB; algValue=0; break;
 					case 1:	alg_fun=CRC32_MASM_BITBYBIT; algValue=0; break;
 					case 3: alg_fun=ADLER32_MASM; algValue=1; break;
+					case 4: alg_fun=ADLER32_VECT; algValue=1; break;
 					default: alg_fun=NULL; algValue=1;
 				 }
 

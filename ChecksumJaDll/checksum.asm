@@ -1,6 +1,6 @@
 .686P 
+.XMM
 .model flat, stdcall 
- 
 .code 
  
 CRC32_MASM_BITBYBIT proc x: DWORD, y: DWORD, z: DWORD ;crc32 *buf len
@@ -165,4 +165,64 @@ LOCAL b:DWORD
 	ret
 ADLER32_MASM endp
 
+ADLER32_VECT proc x: DWORD, y: DWORD, z: DWORD
+LOCAL a:DWORD
+LOCAL b:DWORD
+
+	push	edx
+	push	ecx
+	push	ebx
+	xor ebx, ebx
+	xor eax, eax
+
+;eax, ebx, ecx, edx	
+;esi, edi, ebp
+
+	mov edx, y			;pierwszy element w edx
+	mov ecx, z			;licznik w ecx
+	mov eax, x			;aktualna wartoœæ w eax
+	
+
+	mov eax, x			;aktualna wartoœæ w eax
+	and eax, 65535		;adler32&0xffff -> s1
+	mov DWORD PTR a, eax
+	
+	mov eax, x
+	shr eax, 16
+	and eax, 65535		;(adler >> 16) & 0xffff -> s2
+	mov DWORD PTR b, eax
+	
+	xor eax, eax
+;After iniclaization	
+	pxor xmm0, xmm0
+	
+	;wycztaj dane
+	movdqa xmm0, [edx]
+	movd eax, xmm0
+	
+	PSRLDQ xmm0, 4
+	movd eax, xmm0
+	PSRLDQ xmm0, 4
+	movd eax, xmm0
+	PSRLDQ xmm0, 4
+	movd eax, xmm0
+	
+	;czy xmm jest ==0
+	;pxor          xmm7, xmm7
+	;pcmpeqd       xmm7, xmm0
+	;pmovmskb      eax, xmm7
+	;cmp           ax, -1 ; ew. 'inc ax'
+	;jz            _zero  
+	
+	add edx, 128
+	
+
+	
+;end of proc
+	pop ebx
+	pop ecx
+	pop edx
+	ret
+
+ADLER32_VECT endp
 end
