@@ -168,6 +168,8 @@ ADLER32_MASM endp
 ADLER32_VECT proc x: DWORD, y: DWORD, z: DWORD
 LOCAL a:DWORD
 LOCAL b:DWORD
+LOCAL licznik:DWORD
+LOCAL howManyFullParts: DWORD
 
 	push	edx
 	push	ecx
@@ -194,18 +196,21 @@ LOCAL b:DWORD
 	
 	xor eax, eax
 ;After iniclaization	
-	pxor xmm0, xmm0
+
+	;SSE PART START
+
+	;pxor xmm0, xmm0
 	
 	;wycztaj dane
-	movdqa xmm0, [edx]
-	movd eax, xmm0
+	;movdqa xmm0, [edx]
+	;movd eax, xmm0
 	
-	PSRLDQ xmm0, 4
-	movd eax, xmm0
-	PSRLDQ xmm0, 4
-	movd eax, xmm0
-	PSRLDQ xmm0, 4
-	movd eax, xmm0
+	;PSRLDQ xmm0, 4
+	;movd eax, xmm0
+	;PSRLDQ xmm0, 4
+	;movd eax, xmm0
+	;PSRLDQ xmm0, 4
+	;movd eax, xmm0
 	
 	;czy xmm jest ==0
 	;pxor          xmm7, xmm7
@@ -214,9 +219,94 @@ LOCAL b:DWORD
 	;cmp           ax, -1 ; ew. 'inc ax'
 	;jz            _zero  
 	
-	add edx, 128
+	;add edx, 128
 	
+	;SSE PART END
 
+petlaDuza:
+	
+	cmp ecx, 5550
+	jle mniejNiz5550
+	mov DWORD PTR licznik, 5550
+	sub ecx, 5550
+	jmp petlaMala
+	
+mniejNiz5550:
+	mov DWORD PTR licznik, ecx
+	xor ecx, ecx ; ecx=0	
+	
+petlaMala:
+	mov al, [edx]
+	movzx eax, al
+	inc edx
+	add DWORD PTR a, eax
+	mov eax, DWORD PTR b
+	add eax, DWORD PTR a
+	mov DWORD PTR b, eax
+	
+	mov eax, DWORD PTR licznik
+	dec DWORD PTR licznik
+	cmp DWORD PTR licznik, 0
+	jne petlaMala
+	
+	
+	push ecx
+	mov	eax, DWORD PTR a
+	and	eax, 65535				; 0000ffffH
+	mov	ecx, DWORD PTR a
+	shr	ecx, 16					; 00000010H
+	imul ecx, 15					; 0000000fH
+	add	eax, ecx
+	mov	DWORD PTR a, eax
+
+; 28   :                 b = (b & 0xffff) + (b >> 16) * (65536-MOD_ADLER);
+
+	mov	eax, DWORD PTR b
+	and	eax, 65535				; 0000ffffH
+	mov	ecx, DWORD PTR b
+	shr	ecx, 16					; 00000010H
+	imul	ecx, 15					; 0000000fH
+	add	eax, ecx
+	mov	DWORD PTR b, eax
+	
+	pop ecx 
+	;TU MUSI IŒC DU¯A PÊTLA
+	
+	cmp ecx, 0
+	jg petlaDuza
+	
+	cmp DWORD PTR a, 65521
+	jb nieByloPowMOD_ADLER
+	
+	mov eax, DWORD PTR a
+	sub eax, 65521
+	mov DWORD PTR a, eax
+	
+nieByloPowMOD_ADLER:
+		
+; 33   :         /* It can be shown that b can reach 0xffef1 here. */
+; 34   :         b = (b & 0xffff) + (b >> 16) * (65536-MOD_ADLER);
+
+	mov	eax, DWORD PTR b
+	and	eax, 65535				; 0000ffffH
+	mov	ecx, DWORD PTR b
+	shr	ecx, 16					; 00000010H
+	imul ecx, 15					; 0000000fH
+	add	eax, ecx
+	mov	DWORD PTR b, eax
+	
+	cmp DWORD PTR b, 65521
+	jb nieByloPowMOD_ADLER_B
+	
+	mov eax, DWORD PTR b
+	sub eax, 65521
+	mov DWORD PTR b, eax
+	
+nieByloPowMOD_ADLER_B:
+
+	mov eax, DWORD PTR b
+	shl eax, 16
+	or eax, DWORD PTR a
 	
 ;end of proc
 	pop ebx
