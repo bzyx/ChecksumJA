@@ -169,16 +169,12 @@ ADLER32_VECT proc x: DWORD, y: DWORD, z: DWORD
 LOCAL a:DWORD
 LOCAL b:DWORD
 LOCAL licznik:DWORD
-LOCAL howManyFullParts: DWORD
 
 	push	edx
 	push	ecx
 	push	ebx
 	xor ebx, ebx
 	xor eax, eax
-
-;eax, ebx, ecx, edx	
-;esi, edi, ebp
 
 	mov edx, y			;pierwszy element w edx
 	mov ecx, z			;licznik w ecx
@@ -195,33 +191,6 @@ LOCAL howManyFullParts: DWORD
 	mov DWORD PTR b, eax
 	
 	xor eax, eax
-;After iniclaization	
-
-	;SSE PART START
-
-	;pxor xmm0, xmm0
-	
-	;wycztaj dane
-	;movdqa xmm0, [edx]
-	;movd eax, xmm0
-	
-	;PSRLDQ xmm0, 4
-	;movd eax, xmm0
-	;PSRLDQ xmm0, 4
-	;movd eax, xmm0
-	;PSRLDQ xmm0, 4
-	;movd eax, xmm0
-	
-	;czy xmm jest ==0
-	;pxor          xmm7, xmm7
-	;pcmpeqd       xmm7, xmm0
-	;pmovmskb      eax, xmm7
-	;cmp           ax, -1 ; ew. 'inc ax'
-	;jz            _zero  
-	
-	;add edx, 128
-	
-	;SSE PART END
 
 petlaDuza:
 	
