@@ -108,6 +108,7 @@ LOCAL b:DWORD
 	mov ecx, z			;licznik w ecx
 	mov eax, x			;aktualna wartoœæ w eax
 	
+						;Rozbijamy wprowadzon¹ sumy na 2 podsumy
 	and eax, 65535		;adler32&0xffff -> s1
 	mov DWORD PTR a, eax
 	
@@ -167,105 +168,102 @@ LOCAL licznik:DWORD
 	xor ebx, ebx
 	xor eax, eax
 
-	mov edx, y			;pierwszy element w edx
-	mov ecx, z			;licznik w ecx
-	mov eax, x			;aktualna wartoœæ w eax
+	mov edx, y			; pierwszy element w edx
+	mov ecx, z			; licznik w ecx
+	mov eax, x			; aktualna wartoœæ w eax
 	
-	mov eax, x			;aktualna wartoœæ w eax
-	and eax, 65535		;adler32&0xffff -> s1
+						; Rozbijamy wprowadzon¹ sumê na podsumy
+	mov eax, x			; aktualna wartoœæ w eax
+	and eax, 65535		; adler32 & 0xffff -> s1
 	mov DWORD PTR a, eax
 	
-	mov eax, x
+	mov eax, x			; tworzymy b
 	shr eax, 16
-	and eax, 65535		;(adler >> 16) & 0xffff -> s2
+	and eax, 65535		; (adler >> 16) & 0xffff -> s2
 	mov DWORD PTR b, eax
 	
 	xor eax, eax
 
-petlaDuza:
-	
-	cmp ecx, 5550
+petlaDuza:				;g³ówna pêtla programu
+	cmp ecx, 5550		;Mo¿na zsumowaæ do 5550 bajtów zanim zajdzie potrzeba wykonania operacji modulo
 	jle mniejNiz5550
-	mov DWORD PTR licznik, 5550
-	sub ecx, 5550
+	mov DWORD PTR licznik, 5550	;jeœli mamy >5550 to wartoœæ 5550 staje siê naszym aktualnym licznikem iloœci wywo³añ
+	sub ecx, 5550				; "przerobliliœmy" 5550 bajtów
 	jmp petlaMala
 	
 mniejNiz5550:
-	mov DWORD PTR licznik, ecx
-	xor ecx, ecx ; ecx=0	
+	mov DWORD PTR licznik, ecx	;nie by³o wiêcej ni¿ 5550 wiêc wkonanmy pêtlê dla tylu wartoœci ile mamy dostêpne
+	xor ecx, ecx				;koniec liczenia, wyczerpaliœmy licznik
 	
 petlaMala:
-	mov al, [edx]
-	movzx eax, al
+	mov al, [edx]				;wczytujemy bajt
+	movzx eax, al				;rozszerzamy go do szerokoœci rejestru
 	inc edx
-	add DWORD PTR a, eax
-	mov eax, DWORD PTR b
-	add eax, DWORD PTR a
+	add DWORD PTR a, eax		;dodajemy do sumy a
+	mov eax, DWORD PTR b		
+	add eax, DWORD PTR a		;dodajemy do sumy b
 	mov DWORD PTR b, eax
 	
-	mov eax, DWORD PTR licznik
-	dec DWORD PTR licznik
+	dec DWORD PTR licznik		;zmniejszamy licznik
 	cmp DWORD PTR licznik, 0
-	jne petlaMala
-	
-	
-	push ecx
+	jne petlaMala				;czy mamy jeszcze coœ do liczenia?
+
+	;s1 = (s1 & 0xffff) + (s1 >> 16) * (65536-65521);
+								;By³o wykoane tyle sum, ¿e nale¿y wykonaæ dzielenie
+	push ecx					;Zachowujemy ecx
 	mov	eax, DWORD PTR a
-	and	eax, 65535				; 0000ffffH
-	mov	ecx, DWORD PTR a
-	shr	ecx, 16					; 00000010H
-	imul ecx, 15					; 0000000fH
-	add	eax, ecx
-	mov	DWORD PTR a, eax
+	and	eax, 65535				; a & 0xffff -> eax
+	mov	ecx, DWORD PTR a		; 
+	shr	ecx, 16					; a >> 16
+	imul ecx, 15				; (65536 - 65521 = 15) 
+	add	eax, ecx				
+	mov	DWORD PTR a, eax		;suma do a
 
-; 28   :                 b = (b & 0xffff) + (b >> 16) * (65536-MOD_ADLER);
-
+	;s2 = (s2 & 0xffff) + (s2 >> 16) * (65536-65521);
 	mov	eax, DWORD PTR b
-	and	eax, 65535				; 0000ffffH
+	and	eax, 65535				; b & 0xffff -> eax
 	mov	ecx, DWORD PTR b
-	shr	ecx, 16					; 00000010H
-	imul	ecx, 15					; 0000000fH
+	shr	ecx, 16					; b >> 16
+	imul ecx, 15				; (65536 - 65521 = 15) 
 	add	eax, ecx
-	mov	DWORD PTR b, eax
+	mov	DWORD PTR b, eax		;suma do b
 	
-	pop ecx 
-	;TU MUSI IŒC DU¯A PÊTLA
+	pop ecx						;przywracamy ecx
 	
-	cmp ecx, 0
+	cmp ecx, 0					;jeœli s¹ jeszcze nie odczytane bajty w buforze nale¿y siê nimi zaj¹æ
 	jg petlaDuza
-	
-	cmp DWORD PTR a, 65521
+								;Wyszliœmy z obu pêtli - przygotowanie ostetcznego wyniku
+	cmp DWORD PTR a, 65521		;Jeœli a < 65521 nie musimy wykonywaæ dzielenia
 	jb nieByloPowMOD_ADLER
 	
-	mov eax, DWORD PTR a
-	sub eax, 65521
+	mov eax, DWORD PTR a		;By³o wiêksze od 65521
+	sub eax, 65521				;Algorytm mówi, ze a nie bêdzie wiêksze od 0x1013a (65850) 
+								;wiêc 1 odejmowanie za³atwia sprawê
 	mov DWORD PTR a, eax
 	
 nieByloPowMOD_ADLER:
-		
-; 33   :         /* It can be shown that b can reach 0xffef1 here. */
-; 34   :         b = (b & 0xffff) + (b >> 16) * (65536-MOD_ADLER);
-
+	;b mo¿e wynosiæ 0xffef1 (1048305) nale¿y wykonaæ krok redukowania sumy 
+	;jak w ma³ej pêtli programu
+	;s2 = (s2 & 0xffff) + (s2 >> 16) * (65536-65521);
 	mov	eax, DWORD PTR b
-	and	eax, 65535				; 0000ffffH
+	and	eax, 65535				; b & 0xffff
 	mov	ecx, DWORD PTR b
-	shr	ecx, 16					; 00000010H
-	imul ecx, 15					; 0000000fH
+	shr	ecx, 16					; b >> 16
+	imul ecx, 15				; b * (65536-65521)
 	add	eax, ecx
-	mov	DWORD PTR b, eax
+	mov	DWORD PTR b, eax		; suma do b
 	
-	cmp DWORD PTR b, 65521
+	cmp DWORD PTR b, 65521		;Czy trzeba wykonaæ jeszcze jedno odejmowanie?
 	jb nieByloPowMOD_ADLER_B
 	
-	mov eax, DWORD PTR b
+	mov eax, DWORD PTR b		;Odejmujemy bo b by³o > 65521
 	sub eax, 65521
 	mov DWORD PTR b, eax
 	
 nieByloPowMOD_ADLER_B:
-
-	mov eax, DWORD PTR b
-	shl eax, 16
-	or eax, DWORD PTR a
+	mov eax, DWORD PTR b		; return
+	shl eax, 16					; b>>16
+	or eax, DWORD PTR a			; |a
 	
 ;end of proc
 	pop ebx
