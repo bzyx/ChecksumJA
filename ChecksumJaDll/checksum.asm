@@ -104,60 +104,51 @@ LOCAL b:DWORD
 	xor ebx, ebx
 	xor eax, eax
 
-;eax, ebx, ecx, edx	
-;esi, edi, ebp
-
 	mov edx, y			;pierwszy element w edx
 	mov ecx, z			;licznik w ecx
 	mov eax, x			;aktualna wartoœæ w eax
 	
-
-	mov eax, x			;aktualna wartoœæ w eax
 	and eax, 65535		;adler32&0xffff -> s1
 	mov DWORD PTR a, eax
 	
-	mov eax, x
-	shr eax, 16
-	and eax, 65535		;(adler >> 16) & 0xffff -> s2
+	mov eax, x			;odzyskanie wartoœæi
+	shr eax, 16			; (adler >> 16)
+	and eax, 65535		; & 0xffff -> s2
 	mov DWORD PTR b, eax
 	
 	xor eax, eax
-
-	;mov DWORD PTR a, 1
-	;mov DWORD PTR b, 0
 	
-	count_adler:
-	mov al, [edx]
-	movzx eax, al
-	add eax, DWORD PTR a
-	push edx
-	xor edx, edx
-	push ecx
-	mov ecx, 65521
-	div ecx
-	pop ecx
-	mov eax, edx
-	pop edx
-	mov DWORD PTR a, eax
+	count_adler:		;g³ówna pêtla liczenia
+	mov al, [edx]		;nowy bajt do al
+	movzx eax, al		;rozszerzenie zerami na ca³¹ szerokoœc rejestru
+	add eax, DWORD PTR a	;tworzenie sumy a
+	push edx			;zachowujemy edx
+	xor edx, edx		
+	push ecx			;zachowujemy ecx
+	mov ecx, 65521		;³adujemy 65521 - czyli MOD_ADLER do ecx (bêdziemy dzieliæ)
+	div ecx				;dzielimy eax przez ecx
+	pop ecx				;przywracamy ecx
+	mov eax, edx		;wynik do eax
+	pop edx				;przywracamy edx
+	mov DWORD PTR a, eax	;utrorzon¹ sumê do a
 	
-	add eax, DWORD PTR b
-	push edx
-	xor edx, edx
-	push ecx
-	mov ecx, 65521
-	div ecx
-	pop ecx
-	mov eax, edx
-	pop edx
-	mov DWORD PTR b, eax
+	add eax, DWORD PTR b	;do stworzonej sumy a dodajemy aktualn¹ wartoœc b
+	push edx				;zachowujemy edx
+	xor edx, edx			
+	push ecx				;zachowujemy ecx
+	mov ecx, 65521			;przygotowujemy do dzielenia
+	div ecx					;dzielimy
+	pop ecx					;przywracamy ecx
+	mov eax, edx			;wynik do eax
+	pop edx					;przywracamy edx
+	mov DWORD PTR b, eax	;uaktualniona wartoœæ do b
 	
-	
-	inc edx
-	loop count_adler
-	
-	mov eax, DWORD PTR b
-	shl eax, 16
-	or eax, DWORD PTR a
+	inc edx					;przesuwamy siê dalej 
+	loop count_adler		;licz dopóki ecx>0
+		
+	mov eax, DWORD PTR b	;wartoœc b do eax
+	shl eax, 16				; (b<<16)
+	or eax, DWORD PTR a		; |a
 	
 	pop ebx
 	pop ecx
@@ -180,7 +171,6 @@ LOCAL licznik:DWORD
 	mov ecx, z			;licznik w ecx
 	mov eax, x			;aktualna wartoœæ w eax
 	
-
 	mov eax, x			;aktualna wartoœæ w eax
 	and eax, 65535		;adler32&0xffff -> s1
 	mov DWORD PTR a, eax
