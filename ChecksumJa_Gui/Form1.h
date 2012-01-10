@@ -289,7 +289,6 @@ DWORD _stdcall adler32(DWORD adler, DWORD bufor, DWORD len)
 				 // 
 				 // tCzasWykoania
 				 // 
-				 this->tCzasWykoania->Enabled = false;
 				 this->tCzasWykoania->Location = System::Drawing::Point(188, 114);
 				 this->tCzasWykoania->Name = L"tCzasWykoania";
 				 this->tCzasWykoania->Size = System::Drawing::Size(257, 20);
@@ -422,7 +421,6 @@ DWORD _stdcall adler32(DWORD adler, DWORD bufor, DWORD len)
 				 // 
 				 // tLiczbaCykliZegara
 				 // 
-				 this->tLiczbaCykliZegara->Enabled = false;
 				 this->tLiczbaCykliZegara->Location = System::Drawing::Point(188, 140);
 				 this->tLiczbaCykliZegara->Name = L"tLiczbaCykliZegara";
 				 this->tLiczbaCykliZegara->Size = System::Drawing::Size(258, 20);
